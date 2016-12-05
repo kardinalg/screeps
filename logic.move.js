@@ -12,7 +12,7 @@ var moveLogic = {
         waiting: "sleep",
         work: "work"
     },
-    getTargetWithFallback: function (creep) {
+    getTargetWithFallback: function (creep, controller) {
         var targetId = creep.memory.target;
         /*if (targetId == null || targetId == "")
          {
@@ -22,7 +22,7 @@ var moveLogic = {
         var source = Game.getObjectById(targetId);
         if (!source)
         {
-            moveLogic.transferState(creep, moveLogic.states.idle);
+            moveLogic.transferState(creep, controller, moveLogic.states.idle);
             return null;
         }
         return source;
@@ -41,7 +41,7 @@ var moveLogic = {
     doAction: function (creep, controller, state) {
         if (Memory.alarmMode)
         {
-            var closestEnemy = creep.pos.findNearest(Game.HOSTILE_CREEPS);
+            var closestEnemy = creep.pos.findNearest(FIND_HOSTILE_CREEPS);
             if (closestEnemy && closestEnemy.pos.inRangeTo(creep.pos, 4)) {
                 creep.memory.target = getHomeSpawn(creep).id;
                 moveLogic.transferState(creep, this, moveLogic.states.movingFrom);
@@ -53,20 +53,21 @@ var moveLogic = {
         {
             case "":
             case null:
+            case undefined:
             case moveLogic.states.idle:
                 controller.idle(creep);
                 break;
 
             case moveLogic.states.movingFrom:
             case moveLogic.states.movingTo:
-                var source = moveLogic.getTargetWithFallback(creep);
+                var source = moveLogic.getTargetWithFallback(creep, controller);
                 if (!source)
                     return;
 
-                creep.pos.moveTo(source, {reusePath: 5});
+                creep.moveTo(source, {reusePath: 5});
                 if (creep.pos.isNearTo(source))
                 {
-                    moveLogic.transferState(creep, moveLogic.states.work);
+                    moveLogic.transferState(creep, controller, moveLogic.states.work);
                 }
                 break;
             
@@ -75,7 +76,7 @@ var moveLogic = {
                 break;
                         
             case moveLogic.states.work:
-                var workSource = moveLogic.getTargetWithFallback(creep);
+                var workSource = moveLogic.getTargetWithFallback(creep, controller);
                 if (!workSource)
                     return;
 

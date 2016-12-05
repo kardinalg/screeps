@@ -1,11 +1,13 @@
 var moveLogic = require('logic.move');
 var harvester = require('creep.harvester');
 var carrier = require('creep.carrier');
+var spawner = require('logic.spawner');
 //var _ = require('lodash');
 
 
 
 module.exports.loop = function () {
+    spawner();
     harvester.init();
     carrier.init();
 
@@ -19,7 +21,7 @@ module.exports.loop = function () {
             carrier.run(creep);
         }
         // if(creep.memory.role == 'builder') {
-            // roleBuilder.run(creep);
+        // roleBuilder.run(creep);
         // }
     }
 

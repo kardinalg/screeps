@@ -11,10 +11,13 @@ var harvestLogic = {
         moveLogic.run(creep, this);
     },
     idle: function (creep) {
-        var sources = creep.room.findNearest(FIND_SOURCES);
-        creep.memory.target = sources[0].id;
-        //TODO: better select target
-        moveLogic.transferState(creep, this, moveLogic.states.movingTo);
+        var source = creep.pos.findClosestByRange(FIND_SOURCES);
+        if (source)
+        {
+            creep.memory.target = source.id;
+            //TODO: better select target
+            moveLogic.transferState(creep, this, moveLogic.states.movingTo);
+        }
     },
     work: function (creep, workSource) {
         if (creep.harvest(workSource) == ERR_NOT_IN_RANGE)

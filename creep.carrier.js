@@ -1,12 +1,12 @@
 var moveLogic = require('logic.move');
 
 var carrierLogic = {
-    resourceList: [],
+    resourceList: {},
     init: function ()
     {
         for(var room in Game.rooms)
         {
-            resourceList[room] = updateResTargets(Game.rooms[room]);
+            carrierLogic.resourceList[room] = updateResTargets(Game.rooms[room]);
         }
 
     },
@@ -17,10 +17,10 @@ var carrierLogic = {
         creep.memory.target = null;
         if (needNewTarget(creep))
         {
-            if (resourceList[creep.room.id].length == 0)
+            if (!carrierLogic.resourceList[creep.room.name] || carrierLogic.resourceList[creep.room.name].length == 0)
                 return;
 
-            var target = creep.pos.findClosestByRange(resourceList[creep.room.id]);
+            var target = creep.pos.findClosestByRange(carrierLogic.resourceList[creep.room.name]);
             if (target)
             {
                 creep.memory.target = target.id;
@@ -39,18 +39,26 @@ var carrierLogic = {
     },
     work: function (creep, workSource) {
 
-        if (workSource.energy > 0 && workSource instanceof StructureSpawn)
+        if (workSource instanceof StructureSpawn)
         {
-            creep.transferEnergy(workSource);
+            if (creep.carry.energy > 0)
+            {
+                creep.say("transfering...");
+                creep.transfer(workSource, RESOURCE_ENERGY);
+            }
+            else
+                moveLogic.transferState(creep, this, moveLogic.states.idle);
             return;
         }
         if (workSource.energy == 0) {
+            creep.say("go idle");
 //            removeFromCollectorTargets(creep.memory.target);
             moveLogic.transferState(creep, this, moveLogic.states.idle);
             return;
         }
+        creep.say("collecting");
         creep.pickup(workSource);
-        if (creep.energy == creep.carryCapacity) {
+        if (creep.carry.energy == creep.carryCapacity) {
 //            creep.memory.target = workSource.id;
 //            removeFromCollectorTargets(workSource.id);
             creep.memory.target = moveLogic.getHomeSpawn(creep);
@@ -89,15 +97,14 @@ function  removeFromCollectorTargets(targetId) {
 
 function needNewTarget(creep)
 {
-    return (creep.energy / creep.energyCapacity < 0.75);
+    return (creep.carry.energy / creep.carryCapacity < 0.75);
 }
 
 //Game.spawns.home.
 function updateResTargets (room)
 {
     var collectorTargets = [];
-    //составление списка текущих целей крипов
-    var carries = room.find(Game.MY_CREEPS, {
+    var carries = room.find(FIND_MY_CREEPS, {
         filter: function(object) {
             if (object.memory.role == "carrier") {
                 if (!object.memory.target)
@@ -110,21 +117,23 @@ function updateResTargets (room)
     });
 
     var droppedEnergy = [];
-    //сортировка энергии "на земле"
-    for (var i = 0; i < room.find(Game.DROPPED_ENERGY).length;i++) {
+    for (var i = 0; i < room.find(FIND_DROPPED_ENERGY).length;i++) {
         var largest = 0;
         var largestId = null;
         var largestObj = null;
-        var energyTargets = room.find(Game.DROPPED_ENERGY, {
+        var energyTargets = room.find(FIND_DROPPED_ENERGY, {
             filter: function(object) {
                 if (collectorTargets.indexOf(object.id) == -1 && droppedEnergy.indexOf(object.id) == -1) {
                     if (object.energy > largest) {
                         largest = object.energy;
                         largestId = object.id;
+                        largestObj = object;
                     }
                 }
             }
         });
+        if (!largestObj)
+            continue;
 
         if (carries.length > 0)
         {
@@ -132,7 +141,7 @@ function updateResTargets (room)
             if (closest)
             {
                 closest.memory.target = largestObj.id;
-
+                closest.memory.state = moveLogic.states.movingTo;
                 continue;
             }
         }
