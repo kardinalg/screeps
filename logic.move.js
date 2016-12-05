@@ -10,7 +10,8 @@ var moveLogic = {
         movingTo: "moveTo",
         movingFrom: "moveFrom",
         waiting: "sleep",
-        work: "work"
+        workTo: "workA", //
+        workFrom: "workB"
     },
     getTargetWithFallback: function (creep, controller) {
         var targetId = creep.memory.target;
@@ -28,7 +29,9 @@ var moveLogic = {
         return source;
     },
     getHomeSpawn: function (creep) {
-        return Game.spawns["home"];
+        var spawn = creep.pos.findClosestByRange(FIND_MY_SPAWNS);
+        return spawn;
+//        return Game.spawns["home"];
     },
     run: function (creep, controller) {
         var state = creep.memory.state;
@@ -64,23 +67,33 @@ var moveLogic = {
                 if (!source)
                     return;
 
-                creep.moveTo(source, {reusePath: 5});
+                var result = creep.moveTo(source, {reusePath: 5});
                 if (creep.pos.isNearTo(source))
                 {
-                    moveLogic.transferState(creep, controller, moveLogic.states.work);
+                    if (state == moveLogic.states.movingTo)
+                        moveLogic.transferState(creep, controller, moveLogic.states.workTo);
+                    else
+                        moveLogic.transferState(creep, controller, moveLogic.states.workFrom);
+                    return;
                 }
+                if (result == ERR_NO_PATH)
+                    moveLogic.transferState(creep, controller, moveLogic.states.idle);
                 break;
             
             case moveLogic.states.waiting:
                 controller.sleep(creep);
                 break;
                         
-            case moveLogic.states.work:
+            case moveLogic.states.workTo:
+            case moveLogic.states.workFrom:
                 var workSource = moveLogic.getTargetWithFallback(creep, controller);
                 if (!workSource)
                     return;
 
-                controller.work(creep, workSource);
+                if (state == moveLogic.states.workTo)
+                    controller.workTo(creep, workSource);
+                else
+                    controller.workFrom(creep, workSource);
                 break;
         }
 

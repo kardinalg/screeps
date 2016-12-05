@@ -37,34 +37,25 @@ var carrierLogic = {
             }
         }
     },
-    work: function (creep, workSource) {
-
-        if (workSource instanceof StructureSpawn)
-        {
-            if (creep.carry.energy > 0)
-            {
-                creep.say("transfering...");
-                creep.transfer(workSource, RESOURCE_ENERGY);
-            }
-            else
-                moveLogic.transferState(creep, this, moveLogic.states.idle);
-            return;
-        }
+    workTo: function (creep, workSource) {
         if (workSource.energy == 0) {
-            creep.say("go idle");
-//            removeFromCollectorTargets(creep.memory.target);
             moveLogic.transferState(creep, this, moveLogic.states.idle);
             return;
         }
-        creep.say("collecting");
         creep.pickup(workSource);
         if (creep.carry.energy == creep.carryCapacity) {
-//            creep.memory.target = workSource.id;
-//            removeFromCollectorTargets(workSource.id);
             creep.memory.target = moveLogic.getHomeSpawn(creep);
             moveLogic.transferState(creep, this, moveLogic.states.movingFrom);
         }
 
+    },
+    workFrom: function (creep, workSource) {
+        if (creep.carry.energy > 0)
+        {
+            creep.transfer(workSource, RESOURCE_ENERGY);
+        }
+        else
+            moveLogic.transferState(creep, this, moveLogic.states.idle);
     },
     sleep: function (creep) {
 
@@ -117,7 +108,8 @@ function updateResTargets (room)
     });
 
     var droppedEnergy = [];
-    for (var i = 0; i < room.find(FIND_DROPPED_ENERGY).length;i++) {
+    var droppedEnergyItems = room.find(FIND_DROPPED_ENERGY).length;
+    for (var i = 0; i < droppedEnergyItems; i++) {
         var largest = 0;
         var largestId = null;
         var largestObj = null;
