@@ -11,7 +11,7 @@ module.exports.loop = function () {
     harvester.init();
     carrier.init();
 
-    for(var name in Game.rooms.creeps) {
+    for(var name in Game.creeps) {
         var creep = Game.creeps[name];
         if(creep.memory.role == 'harvester')
         {
