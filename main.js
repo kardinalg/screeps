@@ -1,4 +1,4 @@
-var mainMoveLogic = require('logic.move');
+var moveLogic = require('logic.move');
 var harvester = require('creep.harvester');
 var carrier = require('creep.carrier');
 //var _ = require('lodash');
@@ -6,6 +6,9 @@ var carrier = require('creep.carrier');
 
 
 module.exports.loop = function () {
+    harvester.init();
+    carrier.init();
+
     for(var name in Game.rooms.creeps) {
         var creep = Game.creeps[name];
         if(creep.memory.role == 'harvester')

@@ -1,107 +1,73 @@
-/*
- * Module code goes here. Use 'module.exports' to export things:
- * module.exports.thing = 'a thing';
- *
- * You can import it from another modules like this:
- * var mod = require('creep.harvester');
- * mod.thing == 'a thing'; // true
- */
-var harvesterStateIdle = "idle"; //i
-var harvesterStateMovingTo = "moveTo"; //t
-var harvesterStateMovingFrom = "moveFrom"; //f
-var harvesterStateWaiting = "sleep"; //s
-var harvesterStateWork = "work"; //w
 
-var logic = {
+var moveLogic = require('logic.move');
+
+var harvestLogic = {
+    sourceCache: {},
+    init: function ()
+    {
+
+    },
     run: function (creep) {
-        var state = creep.memory.state;
-        doAction(creep, state);
+        moveLogic.run(creep, this);
     },
-    transferState: function (creep, state) {
-        creep.memory.state = state;
-        doAction(creep, state);
+    idle: function (creep) {
+        var sources = creep.room.findNearest(FIND_SOURCES);
+        creep.memory.target = sources[0].id;
+        //TODO: better select target
+        moveLogic.transferState(creep, this, moveLogic.states.movingTo);
     },
-    doAction: function (creep, state) {
-        switch (state)
+    work: function (creep, workSource) {
+        if (creep.harvest(workSource) == ERR_NOT_IN_RANGE)
         {
-            case "":
-            case null:
-            case harvesterStateIdle:
-                
-                break;
-            
-            case harvesterStateMovingTo:
-                var targetId = creep.memory.target;
-                /*if (targetId == null || targetId == "")
-                {
-                    logic.transferState(creep, harvesterStateIdle);    
-                    return;
-                }*/
-                var source = Game.getObjectById(targetId));
-                if (!source)
-                {
-                    logic.transferState(creep, harvesterStateIdle);    
-                    return;
-                }
-                creep.moveTo(source, {reusePath: 5});
-                if (isNearTo(source))
-                {
-                    logic.transferState(creep, harvesterStateWork);
-                }
-                break;
-            
-            case harvesterStateMovingFrom:
-                
-                break;
-            
-            case harvesterStateWaiting:
-                return;
-                break;
-                        
-            case harvesterStateWork:
-                if(creep.carry.energy < creep.carryCapacity) {
-                    if(creep.harvest(source) == ERR_NOT_IN_RANGE) {
-                        logic.transferState(creep, harvesterStateIdle);
-                    }
-                }
-                else
-                { //creep is full, wait for transfer
-                    if (Memory.freeCarry == 0)
-                    {
-                        creep.memory.target = "";
-                        logic.transferState(creep, harvesterStateMovingFrom);
-                    }
-                    else
-                    {
-                        
-                        logic.transferState(creep, harvesterStateWaiting);
-                    }
-                }
-                break;
+            moveLogic.transferState(creep, this, moveLogic.states.idle);
         }
-        
-    
-        if(creep.carry.energy < creep.carryCapacity) {
-            var sources = creep.room.find(FIND_SOURCES);
-            if(creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(sources[0]);
-            }
-        }
-        else {
-            var targets = creep.room.find(FIND_STRUCTURES, {
-                    filter: (structure) => {
-                        return (//structure.structureType == STRUCTURE_EXTENSION ||
-                                //structure.structureType == STRUCTURE_SPAWN ||
-                                structure.structureType == STRUCTURE_TOWER) && structure.energy < structure.energyCapacity;
-                    }
-            });
-            if(targets.length > 0) {
-                if(creep.transfer(targets[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(targets[0]);
-                }
-            }
-        }
-        
-    }
+    },
+    sleep: function (creep) {}
+
 };
-module.exports = logic;
+module.exports = harvestLogic;
+
+/*
+if (!Memory.sourceArray) {
+    var orderedSourceArray = [];
+    for (var i = 0; i < Game.spawns.home.room.find(Game.SOURCES).length; i++) {
+        var nearSource = Game.spawns.home.pos.findNearest(Game.SOURCES, {
+            filter: function(object) {
+                if (orderedSourceArray == []) {
+                    return true;
+                }
+                var inArray = true;
+                for (var j = 0;j<orderedSourceArray.length;j++) {
+                    if (orderedSourceArray[j][0] == object.id) {
+                        inArray = false;
+                    }
+                }
+                return inArray;
+            }
+        });
+        orderedSourceArray[orderedSourceArray.length] = [nearSource.id, null, null];
+    }
+    Memory.sourceArray = orderedSourceArray;
+}
+
+Game.spawns.home.room.find(Game.MY_CREEPS, {
+    filter: function(object) {
+        if (object.memory.role == "worker" && object.memory.target) {
+
+        } else if (object.memory.role == "worker") {
+            for (var foundSource in Memory.sourceArray) {
+                if (Memory.sourceArray[foundSource][1] == null) {
+                    Memory.sourceArray[foundSource][1] = object.id
+                    object.memory.target = object.pos.findNearest(Game.SOURCES, {
+                        filter: function(object2) {
+                            return Memory.sourceArray[foundSource][0] == object2.id;
+                        }
+                    }).id;
+                    return;
+                }
+            }
+        }
+        return false;
+    }
+});
+*/
